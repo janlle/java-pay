@@ -41,40 +41,50 @@ public class WxPayService {
     private AppProperties appProperties;
 
     /**
-     * App支付
+     * 微信App支付
      *
      * @param request
      * @param orderId
      */
-    public void appPay(HttpServletRequest request, Long orderId) {
+    public Map<String, String> appPay(HttpServletRequest request, Long orderId) {
         Order order = orderService.findOne(orderId);
         if (order.getStatus() != OrderStatusEnum.CREATE.getStatus()) {
-            log.error("create order failed order status error orderId:{}", orderId);
-            return;
+            log.error("order status error orderId:{}", orderId);
+            return null;
         }
         String spbill_create_ip = AppUtil.getIpAddress(request);
         if (!AppUtil.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
         }
-
-        //微信支付是个必须要传入的参数
+        String nonce_str = 1 + RandomUtil.getStr(12);
+        // 微信app支付十个必须要传入的参数
         Map<String, String> params = new HashMap<>();
         params.put("appid", appProperties.getWx().getApp_id());                 //appId
         params.put("mch_id", appProperties.getWx().getMch_id());                //微信支付商户号
-        params.put("nonce_str", RandomUtil.getStr(12));                      //随机字符串
-        params.put("body", "App weChat pay!");                               //商品描述
-        params.put("out_trade_no", order.getOutTradeNo());                  //商户订单号
-        params.put("total_fee", order.getTotalFee().toString());             //总金额(分)
-        params.put("spbill_create_ip", spbill_create_ip);                 //订单生成的机器IP，指用户浏览器端IP
+        params.put("nonce_str", nonce_str);                                     //随机字符串
+        params.put("body", "App weChat pay!");                                  //商品描述
+        params.put("out_trade_no", order.getOutTradeNo());                      //商户订单号
+        params.put("total_fee", order.getTotalFee().toString());                //总金额(分)
+        params.put("spbill_create_ip", spbill_create_ip);                       //订单生成的机器IP，指用户浏览器端IP
         params.put("notify_url", appProperties.getWx().getNotify_url());        //回调url
-        params.put("trade_type", "APP");                                     // 交易类型:JS_API=公众号支付、NATIVE=扫码支付、APP=app支付
+        params.put("trade_type", "APP");                                        // 交易类型:JS_API=公众号支付、NATIVE=扫码支付、APP=app支付
         String sign = AppUtil.createSign(params, appProperties.getWx().getApi_key());
         params.put("sign", "sign");
         String xmlData = AppUtil.mapToXml(params);
-        log.info("xmlData:{}", xmlData);
         String wxRetXmlData = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order(), xmlData, null);
         Map retData = AppUtil.xmlToMap(wxRetXmlData);
         log.info("微信返回信息:{}", retData);
+
+        // 封装参数返回App端
+        Map<String, String> result = new HashMap<>();
+        result.put("appid", appProperties.getWx().getApp_id());
+        result.put("partnerid", appProperties.getWx().getMch_id());
+        result.put("prepayid", retData.get("prepay_id").toString());
+        result.put("noncestr", nonce_str);
+        result.put("timestamp", RandomUtil.getDateStr(13));
+        result.put("package", "Sign=WXPay");
+        result.put("sign", AppUtil.createSign(result, appProperties.getWx().getApi_key()));
+        return result;
     }
 
     /**
