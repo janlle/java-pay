@@ -14,7 +14,7 @@ import com.andy.pay.common.exception.ExceptionMessage;
 import com.andy.pay.common.property.AppProperties;
 import com.andy.pay.common.utils.ImageCodeUtil;
 import com.andy.pay.common.utils.RandomUtil;
-import com.andy.pay.pojos.entity.Order;
+import com.andy.pay.entity.Order;
 import com.andy.pay.service.OrderService;
 import com.andy.pay.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;

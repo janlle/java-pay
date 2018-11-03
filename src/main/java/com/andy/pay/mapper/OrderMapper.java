@@ -1,6 +1,6 @@
 package com.andy.pay.mapper;
 
-import com.andy.pay.pojos.entity.Order;
+import com.andy.pay.entity.Order;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
