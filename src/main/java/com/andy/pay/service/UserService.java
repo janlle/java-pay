@@ -1,8 +1,8 @@
 package com.andy.pay.service;
 
 import com.andy.pay.common.exception.ExceptionMessage;
+import com.andy.pay.entity.User;
 import com.andy.pay.mapper.UserMapper;
-import com.andy.pay.pojos.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;

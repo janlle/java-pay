@@ -6,7 +6,7 @@ package com.andy.pay.service;//package com.andy.pay.service;
 //import com.andy.pay.common.utils.CodeUtil;
 //import com.andy.pay.common.utils.JwtTokenUtil;
 //import com.andy.pay.mapper.UserMapper;
-//import com.andy.pay.object.entity.User;
+//import com.andy.pay.object.pojo.User;
 //import org.springframework.data.redis.core.RedisTemplate;
 //import org.springframework.data.redis.core.StringRedisTemplate;
 //import org.springframework.web.client.RestTemplate;
