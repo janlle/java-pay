@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/boot?useSSL=false
+    url: jdbc:mysql://localhost:3306/xxx?useSSL=false
     username: root
     password: root
   thymeleaf:
@@ -15,12 +15,12 @@ spring:
 app:
   pay:
     wx:
-      notify_url: http://rllin.nat300.top/wechat/auth/notify
-      redirect_url: http://rllin.nat300.top/wechat/auth
-      app_id: wxac5528ca26f1218b
-      app_secret: 3WD8NBDtbfsOp_fILJc-U8r3XkgJt3njDOFlFAJa
-      mch_id: 1387792102
-      api_key: 8908271717yangwj94716zhouqian520
+      notify_url: http://xxx/wechat/auth/notify
+      redirect_url: http://xxxx/wechat/auth
+      app_id: xxx
+      app_secret: xxxx
+      mch_id: xxx
+      api_key: xxxx
       cert_path: apiclient_cert.p12
       url:
         payUrl: https://api.mch.wx.qq.com/pay/unifiedorder              # 统一下单url
