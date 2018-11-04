@@ -219,19 +219,5 @@ public class AliPayService {
         return null;
     }
 
-    public static void main(String[] args) throws Exception {
-        Map<String, String> bizContent = new TreeMap<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-        bizContent.put("out_trade_no", "aaa");
-        //订单金额:元
-        bizContent.put("total_amount", "b bbb");
-        bizContent.put("subject", "订单标题");
-        //实际收款账号，一般填写商户PID即可
-        bizContent.put("seller_id", "eeee");
-        //电脑网站支付
-        bizContent.put("product_code", "FAST_INSTANT_TRADE_PAY");
-        bizContent.put("body", "两个橘子");
-        System.out.println(objectMapper.writeValueAsString(bizContent));
-    }
 
 }
