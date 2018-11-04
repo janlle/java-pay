@@ -25,6 +25,8 @@ public class WxProperties {
 
     private String notify_url;
 
+    private String refund_notify_url;
+
     private String create_order;
 
     /*退款url*/

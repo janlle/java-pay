@@ -59,15 +59,25 @@ public class WxPayService {
         String nonce_str = 1 + RandomUtil.getStr(12);
         // 微信app支付十个必须要传入的参数
         Map<String, String> params = new HashMap<>();
-        params.put("appid", appProperties.getWx().getApp_id());                 //appId
-        params.put("mch_id", appProperties.getWx().getMch_id());                //微信支付商户号
-        params.put("nonce_str", nonce_str);                                     //随机字符串
-        params.put("body", "App weChat pay!");                                  //商品描述
-        params.put("out_trade_no", order.getOutTradeNo());                      //商户订单号
-        params.put("total_fee", order.getTotalFee().toString());                //总金额(分)
-        params.put("spbill_create_ip", spbill_create_ip);                       //订单生成的机器IP，指用户浏览器端IP
-        params.put("notify_url", appProperties.getWx().getNotify_url());        //回调url
-        params.put("trade_type", "APP");                                        // 交易类型:JS_API=公众号支付、NATIVE=扫码支付、APP=app支付
+        // appId
+        params.put("appid", appProperties.getWx().getApp_id());
+        // 微信支付商户号
+        params.put("mch_id", appProperties.getWx().getMch_id());
+        // 随机字符串
+        params.put("nonce_str", nonce_str);
+        // 商品描述
+        params.put("body", "App weChat pay!");
+        // 商户订单号
+        params.put("out_trade_no", order.getOutTradeNo());
+        // 总金额(分)
+        params.put("total_fee", order.getTotalFee().toString());
+        // 订单生成的机器IP，指用户浏览器端IP
+        params.put("spbill_create_ip", spbill_create_ip);
+        // 回调url
+        params.put("notify_url", appProperties.getWx().getNotify_url());
+        // 交易类型:JS_API=公众号支付、NATIVE=扫码支付、APP=app支付
+        params.put("trade_type", "APP");
+        // 签名
         String sign = AppUtil.createSign(params, appProperties.getWx().getApi_key());
         params.put("sign", "sign");
         String xmlData = AppUtil.mapToXml(params);
@@ -88,6 +98,18 @@ public class WxPayService {
     }
 
     /**
+     * {
+     *   "appId":"wxxxx",
+     *   "partnerid":"xxxx",
+     *   "noncestr":"f7382ae04f15cf4e5fd5fbecf342",
+     *   "prepayid":"xxxx",
+     *   "timeStamp":"20180906095441"
+     *   "package":"Sign=WXPay",
+     *   "sign":"AE3E21CCB1DF50B65A0531000E9EF788"
+     * }
+     */
+
+    /**
      * 微信扫码支付传入金额为分
      *
      * @param totalFee
@@ -96,7 +118,8 @@ public class WxPayService {
      * @return
      * @throws Exception
      */
-    public boolean qrCodePay(String totalFee, HttpServletResponse response, HttpServletRequest request) {
+    public boolean qrCodePay(String totalFee, HttpServletResponse response,
+                             HttpServletRequest request) {
         String nonce_str = RandomUtil.getStr(12);
         String outTradeNo = 1 + RandomUtil.getNum(11);
         String spbill_create_ip = AppUtil.getIpAddress(request);
@@ -104,6 +127,7 @@ public class WxPayService {
             spbill_create_ip = "127.0.0.1";
         }
         Map<String, String> params = new TreeMap<>();
+        // 扫码支付需要参数
         params.put("appid", appProperties.getWx().getApp_id());
         params.put("mch_id", appProperties.getWx().getMch_id());
         params.put("nonce_str", nonce_str);
@@ -117,15 +141,16 @@ public class WxPayService {
         params.put("sign", sign);
         String requestXml = AppUtil.mapToXml(params);
         String responseXml = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order(), requestXml, null);
-        Map<String, String> responseMap = AppUtil.xmlToMap(responseXml);
+        Map<String, String> respMap = AppUtil.xmlToMap(responseXml);
         //return_code为微信返回的状态码，SUCCESS表示成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
-        if ("SUCCESS".equals(responseMap.get("return_code")) && "SUCCESS".equals(responseMap.get("result_code"))) {
-            log.info("wx pre pay success response:{}", responseMap);
-            ImageCodeUtil.createQRCode(responseMap.get("code_url"), response);
+        if ("SUCCESS".equals(respMap.get("return_code")) && "SUCCESS".equals(respMap.get("result_code"))) {
+            log.info("wx pre pay success response:{}", respMap);
+            // 二维码中需要包含微信返回的信息
+            ImageCodeUtil.createQRCode(respMap.get("code_url"), response);
             // 保存订单信息
             return true;
         }
-        log.error("wx pre pay error response:{}", responseMap);
+        log.error("wx pre pay error response:{}", respMap);
         return false;
     }
 
@@ -137,7 +162,8 @@ public class WxPayService {
      * @throws IOException
      */
     public void notifyOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String resXml = "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+        String resXml = "<xml><return_code><![CDATA[SUCCESS]]>" +
+                "</return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
         BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
         out.write(resXml.getBytes());
         out.flush();
@@ -149,18 +175,43 @@ public class WxPayService {
     /**
      * 微信退款
      *
-     * @param xmlData
+     * @param orderId
      * @return
      * @throws Exception
      */
-    public boolean wxRefund(String xmlData) throws Exception {
+    public boolean wxRefund(Long orderId) throws Exception {
+        String nonceStr = RandomUtil.getStr(12);
+        String out_refund_no = RandomUtil.getStr(12);
+        Order order = orderService.findOne(orderId);
+
+        SortedMap<String, String> params = new TreeMap<>();
+        // 公众账号ID
+        params.put("appid", appProperties.getWx().getApp_id());
+        // 商户号
+        params.put("mch_id", appProperties.getWx().getMch_id());
+        // 随机字符串
+        params.put("nonce_str", nonceStr);
+        // 商户订单号
+        params.put("out_trade_no", order.getOutTradeNo());
+        // 订单金额
+        params.put("total_fee", order.getTotalFee().toString());
+        // 商户退款单号
+        params.put("out_refund_no", out_refund_no);
+        // 退款原因
+        params.put("refund_fee", order.getTotalFee().toString());
+        // 退款结果通知url
+        params.put("notify_url", appProperties.getWx().getRefund_notify_url());
+        // 签名
+        params.put("sign", AppUtil.createSign(params, appProperties.getWx().getApi_key()));
+        String data = AppUtil.mapToXml(params);
+
         CloseableHttpClient httpClient = HttpUtil.sslHttpsClient(appProperties.getWx().getCertificate_path(), appProperties.getWx().getApi_key());
-        String xmlResponse = HttpUtil.sendSslXmlPost(appProperties.getWx().getRefund_url(), xmlData, null, httpClient);
+        String xmlResponse = HttpUtil.sendSslXmlPost(appProperties.getWx().getRefund_url(), data, null, httpClient);
         Map<String, String> mapData = AppUtil.xmlToMap(xmlResponse);
-        //return_code为微信返回的状态码，SUCCESS表示申请退款成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
+        // return_code为微信返回的状态码，SUCCESS表示申请退款成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
         if ("SUCCESS".equalsIgnoreCase(mapData.get("return_code"))) {
             log.info("wx refund success response:{}", mapData);
-            // 修改订单状态为退款
+            // 修改订单状态为退款保存退款订单等操作
             return true;
         }
         log.error("wx refund error response:{}", mapData);
@@ -176,12 +227,13 @@ public class WxPayService {
     public Map xcxPay(Long orderId, HttpServletRequest request) {
         Order order = orderService.findOne(orderId);
         User user = userService.findOne(order.getUserId());
-        String nonce_str = RandomUtil.getNum(24);
+        String nonce_str = RandomUtil.getNum(12);
         String outTradeNo = 1 + RandomUtil.getNum(11);
         String spbill_create_ip = AppUtil.getIpAddress(request);
         if (!AppUtil.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
         }
+        // 小程序支付需要参数
         SortedMap<String, String> reqMap = new TreeMap<>();
         reqMap.put("appid", appProperties.getWx().getApp_id());
         reqMap.put("mch_id", appProperties.getWx().getMch_id());

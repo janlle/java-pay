@@ -29,6 +29,8 @@ public class Order {
 
     private String outTradeNo;
 
+    private String transactionId;
+
     private String createIp;
 
     private Date createTime;

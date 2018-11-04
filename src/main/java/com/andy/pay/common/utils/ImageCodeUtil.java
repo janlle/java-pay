@@ -76,7 +76,8 @@ public class ImageCodeUtil {
             response.setHeader("content-type", "image/png");
             response.setCharacterEncoding(StandardCharsets.UTF_8.displayName());
             response.setDateHeader("Expires", 0);
-            BitMatrix bitMatrix = new MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, width, height, hashMap);
+            BitMatrix bitMatrix = new MultiFormatWriter()
+                    .encode(content, BarcodeFormat.QR_CODE, width, height, hashMap);
             BufferedImage img = MatrixToImageWriter.toBufferedImage(bitMatrix);
             ImageIO.write(img, format, response.getOutputStream());
         } catch (Exception e) {

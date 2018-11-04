@@ -26,7 +26,6 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +33,6 @@ import java.util.Map;
  * http请求工具类
  *
  * @author Leone
- * @since 2018-06-17
  **/
 @Slf4j
 public class HttpUtil {
@@ -201,21 +199,6 @@ public class HttpUtil {
             e.printStackTrace();
         }
         return result;
-    }
-
-
-    public static void main(String[] args) {
-        String xml = "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
-        String json = "{\"return_msg\": \"OK\",\"return_code\": \"SUCCESS\"}";
-        Map<String, String> map = new HashMap<>();
-        map.put("return_msg", "OK");
-        map.put("return_code", "SUCCESS");
-        try {
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
 }

@@ -66,10 +66,4 @@ public class RandomUtil {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println(getStr(34));
-        System.out.println(getNum(35));
-    }
-
-
 }
