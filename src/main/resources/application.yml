@@ -24,17 +24,11 @@ app:
       cert_path: apiclient_cert.p12
       url:
         payUrl: https://api.mch.wx.qq.com/pay/unifiedorder              # 统一下单url
-        orderQueryUrl: https://api.mch.wx.qq.com/pay/orderquery         # 查询订单url
-        closeOrderUrl: https://api.mch.wx.qq.com/pay/closeorder         # 关闭订单url
         refundUrl: https://api.mch.wx.qq.com/secapi/pay/refund          # 申请退款url
-        refundQueryUrl: https://api.mch.wx.qq.com/pay/refundquery       # 退款查询url
-        authCodeUrl: https://open.wx.qq.com/connect/oauth2/authorize?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_userinfo&state=test#wechat_redirect
-        tokenUrl: https://api.wx.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code
-        userInfoUrl: https://api.wx.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN
     ali:
-      appid:
-      private_key:
-      public_key:
-      alipay_public_key:
+      appid: xx
+      private_key: xx
+      public_key: xxx
+      alipay_public_key: xxx
       url:
         openApi: https://openapi.alipay.com/gateway.do
