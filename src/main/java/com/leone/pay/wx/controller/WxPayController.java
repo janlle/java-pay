@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * 微信支付
  *
- * @author Leone
+ * @author leone
  * @since 2018-05-20
  **/
 @Slf4j

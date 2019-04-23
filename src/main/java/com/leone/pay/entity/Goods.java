@@ -5,9 +5,14 @@ import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * <p> 
+ *
+ * @author leone
+ * @since 2018-08-23
+ **/
 @Data
 public class Goods {
-
 
     @ApiModelProperty("商品id")
     private String productId;

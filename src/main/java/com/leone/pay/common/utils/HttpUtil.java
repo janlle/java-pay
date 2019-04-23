@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * http请求工具类
  *
- * @author Leone
+ * @author leone
  **/
 @Slf4j
 public class HttpUtil {

@@ -6,8 +6,8 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * @author Leone
- * @since 2018/6/3 20:09
+ * @author leone
+ * @since 2018-10-23
  **/
 @Data
 public class User implements Serializable {

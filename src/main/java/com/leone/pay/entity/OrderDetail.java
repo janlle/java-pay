@@ -4,6 +4,12 @@ import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * <p> 
+ *
+ * @author leone
+ * @since 2018-10-23
+ **/
 @Data
 public class OrderDetail {
 

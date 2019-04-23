@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import javax.security.auth.login.FailedLoginException;
 
 /**
- * @author Leone
+ * @author leone
  * @since 2018-08-09
  **/
 @RestControllerAdvice

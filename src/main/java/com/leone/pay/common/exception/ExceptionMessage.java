@@ -1,7 +1,7 @@
 package com.leone.pay.common.exception;
 
 /**
- * @author Leone
+ * @author leone
  **/
 public enum ExceptionMessage {
 

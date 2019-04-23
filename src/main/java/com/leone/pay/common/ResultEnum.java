@@ -1,7 +1,7 @@
 package com.leone.pay.common;
 
 /**
- * @author Leone
+ * @author leone
  **/
 public enum ResultEnum {
 

@@ -6,7 +6,7 @@ import java.util.Random;
 import java.util.UUID;
 
 /**
- * @author Leone
+ * @author leone
  * @since 2018-07-04
  **/
 public class RandomUtil {

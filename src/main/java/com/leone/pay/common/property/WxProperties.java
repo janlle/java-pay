@@ -3,7 +3,7 @@ package com.leone.pay.common.property;
 import lombok.Data;
 
 /**
- * @author Leone
+ * @author leone
  * @since 2018-06-03
  **/
 @Data

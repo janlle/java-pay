@@ -3,8 +3,8 @@ package com.leone.pay.common.property;
 import lombok.Data;
 
 /**
- * @author Leone
- * @since 2018-06-03 15:33
+ * @author leone
+ * @since 2018-06-03
  **/
 @Data
 public class AliProperties {

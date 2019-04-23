@@ -1,9 +1,8 @@
 package com.leone.pay.common.enums;
 
 /**
- * @Description:
- * @author Leone
- * @since 2018-05-20 20:14
+ * @author leone
+ * @since 2018-05-20
  **/
 public enum OrderStatusEnum {
 
