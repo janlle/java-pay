@@ -1,4 +1,4 @@
-package com.leone.pay.common.utils;
+package com.leone.pay.utils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,8 +17,8 @@ public class RandomUtil {
      * @param length
      * @return
      */
-    public static String getNum(Integer length) {
-        if (length < 0 && length > 512) {
+    public static String randomNum(Integer length) {
+        if (length < 0 || length > 512) {
             length = 32;
         }
         StringBuilder result = new StringBuilder();

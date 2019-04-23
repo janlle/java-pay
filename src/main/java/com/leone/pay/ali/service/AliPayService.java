@@ -10,14 +10,14 @@ import com.alipay.api.response.AlipayFundTransToaccountTransferResponse;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
 import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.alipay.api.response.AlipayTradeRefundResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leone.pay.common.exception.ExceptionMessage;
 import com.leone.pay.common.property.AppProperties;
-import com.leone.pay.common.utils.ImageCodeUtil;
-import com.leone.pay.common.utils.RandomUtil;
 import com.leone.pay.entity.Order;
 import com.leone.pay.service.OrderService;
 import com.leone.pay.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.leone.pay.utils.ImageCodeUtil;
+import com.leone.pay.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -72,7 +72,7 @@ public class AliPayService {
     public boolean deposit(Long orderId) {
         AlipayFundTransToaccountTransferModel transferModel = new AlipayFundTransToaccountTransferModel();
         Order order = orderService.findOne(orderId);
-        transferModel.setOutBizNo(1 + RandomUtil.getNum(11));
+        transferModel.setOutBizNo(1 + RandomUtil.randomNum(11));
         transferModel.setAmount(order.getTotalFee().toString());
         transferModel.setPayeeAccount("支付宝账号真实账号");
         transferModel.setPayeeRealName("支付宝账号真实姓名");
@@ -138,7 +138,7 @@ public class AliPayService {
         //可选 代表 退款的原因说明
         params.put("refund_reason", "退款的原因说明");
         //可选 标识一次退款请求，同一笔交易多次退款需要保证唯一（就是out_request_no在2次退款一笔交易时，要不一样），如需部分退款，则此参数必传
-        params.put("out_request_no", 1 + RandomUtil.getNum(11));
+        params.put("out_request_no", 1 + RandomUtil.randomNum(11));
         //可选 代表 商户的门店编号
         params.put("store_id", "90m");
         request.setBizContent(objectMapper.writeValueAsString(params));

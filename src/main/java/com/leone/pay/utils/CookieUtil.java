@@ -1,4 +1,4 @@
-package com.leone.pay.common.utils;
+package com.leone.pay.utils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;

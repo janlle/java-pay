@@ -1,4 +1,4 @@
-package com.leone.pay.common.utils;
+package com.leone.pay.utils;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -12,9 +12,7 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -25,37 +23,6 @@ import java.util.Random;
  **/
 @Slf4j
 public class ImageCodeUtil {
-
-    /**
-     * 生成二维码
-     *
-     * @param filePath
-     * @param content
-     * @param filename
-     */
-    public static void createQRCode(String filePath, String content, String filename) {
-        int width = 300, height = 300;
-        String format = "png";
-        Map<EncodeHintType, Object> hashMap = new HashMap();
-        hashMap.put(EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.displayName());
-        hashMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
-        hashMap.put(EncodeHintType.MARGIN, 1);
-        try {
-            File qrCodeFile = new File(filePath);
-            if (!qrCodeFile.exists()) {
-                // 创建二维码生成目录
-                qrCodeFile.mkdirs();
-            }
-            File file = new File(filePath + filename + ".png");
-            if (!file.exists()) {
-                BitMatrix bitMatrix = new MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, width, height, hashMap);
-                Path path = file.toPath();
-                MatrixToImageWriter.writeToPath(bitMatrix, format, path);
-            }
-        } catch (Exception e) {
-            log.info("create QRCode error message:{}", e.getMessage());
-        }
-    }
 
     /**
      * 生成二维码并响应到浏览器
@@ -110,10 +77,10 @@ public class ImageCodeUtil {
             int yl = random.nextInt(12);
             g.drawLine(x, y, x + xl, y + yl);
         }
-        String sRand = "";
+        StringBuilder sRand = new StringBuilder();
         for (int i = 0; i < 4; i++) {
             String rand = String.valueOf(random.nextInt(10));
-            sRand += rand;
+            sRand.append(rand);
             g.setColor(new Color(20 + random.nextInt(110), 20 + random.nextInt(110), 20 + random.nextInt(110)));
             g.drawString(rand, 13 * i + 6, 16);
         }
@@ -124,7 +91,7 @@ public class ImageCodeUtil {
         response.setContentType("image/jpeg");
         ImageIO.write(image, "JPG", response.getOutputStream());
         response.getOutputStream().close();
-        return sRand;
+        return sRand.toString();
     }
 
     /**
