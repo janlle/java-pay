@@ -30,6 +30,7 @@ public class RandomUtil {
         return result.toString();
     }
 
+
     /**
      * 生成32位随机数字
      *

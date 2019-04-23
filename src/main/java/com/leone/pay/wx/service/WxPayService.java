@@ -5,16 +5,18 @@ import com.leone.pay.common.exception.ExceptionMessage;
 import com.leone.pay.common.exception.ValidateException;
 import com.leone.pay.common.property.AppProperties;
 import com.leone.pay.entity.Order;
+import com.leone.pay.entity.OrderBill;
 import com.leone.pay.entity.User;
+import com.leone.pay.service.OrderBillService;
 import com.leone.pay.service.OrderService;
 import com.leone.pay.service.UserService;
-import com.leone.pay.utils.AppUtil;
 import com.leone.pay.utils.HttpUtil;
-import com.leone.pay.utils.ImageCodeUtil;
+import com.leone.pay.utils.PaymentUtils;
 import com.leone.pay.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -38,30 +40,39 @@ public class WxPayService {
     private UserService userService;
 
     @Resource
+    private OrderBillService orderBillService;
+
+    @Resource
     private AppProperties appProperties;
 
     /**
-     * 微信App支付
+     * 微信App支付，请求微信下单接口生成预付款信息返回 prepay_id 给客户端
      *
      * @param request
      * @param orderId
      */
-    public Map<String, String> appPay(HttpServletRequest request, Long orderId) {
+    public Map<String, Object> appPay(HttpServletRequest request, Long orderId) {
+        // 校验订单信息
         Order order = orderService.findOne(orderId);
         if (order.getStatus() != OrderStatus.CREATE.getStatus()) {
-            log.error("order status error orderId:{}", orderId);
-            return null;
+            log.error(ExceptionMessage.ORDER_STATUS_INCORRECTNESS + " orderId: {}", orderId);
+            throw new ValidateException(ExceptionMessage.ORDER_STATUS_INCORRECTNESS);
         }
-        String spbill_create_ip = AppUtil.getIpAddress(request);
-        if (!AppUtil.isIp(spbill_create_ip)) {
+
+        // 设置客户端的ip地址
+        String spbill_create_ip = PaymentUtils.getIpAddress(request);
+        if (!PaymentUtils.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
         }
-        String nonce_str = 1 + RandomUtil.getStr(12);
+
+        String nonce_str = 1 + RandomUtil.getStr(15);
+
         // 微信app支付十个必须要传入的参数
-        Map<String, String> params = new HashMap<>();
-        // appId
+        Map<String, Object> params = new HashMap<>();
+
+        // 应用ID
         params.put("appid", appProperties.getWx().getApp_id());
-        // 微信支付商户号
+        // 商户号
         params.put("mch_id", appProperties.getWx().getMch_id());
         // 随机字符串
         params.put("nonce_str", nonce_str);
@@ -71,30 +82,95 @@ public class WxPayService {
         params.put("out_trade_no", order.getOutTradeNo());
         // 总金额(分)
         params.put("total_fee", order.getTotalFee().toString());
-        // 订单生成的机器IP，指用户浏览器端IP
+        // 终端IP
         params.put("spbill_create_ip", spbill_create_ip);
-        // 回调url
+        // 通知地址
         params.put("notify_url", appProperties.getWx().getNotify_url());
         // 交易类型:JS_API=公众号支付、NATIVE=扫码支付、APP=app支付
         params.put("trade_type", "APP");
         // 签名
-        String sign = AppUtil.createSign(params, appProperties.getWx().getApi_key());
+        String sign = PaymentUtils.sign(params, appProperties.getWx().getApi_key());
         params.put("sign", "sign");
-        String xmlData = AppUtil.mapToXml(params);
+
+        String xmlData = PaymentUtils.mapToXml(params);
+
+        // 向微信发起预支付
         String wxRetXmlData = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), xmlData, null);
-        Map retData = AppUtil.xmlToMap(wxRetXmlData);
-        log.info("微信返回信息:{}", retData);
+
+        Map wxRetMapData = PaymentUtils.xmlToMap(wxRetXmlData);
+        Assert.notNull(wxRetMapData, ExceptionMessage.XML_DATA_INCORRECTNESS.getMessage());
+        log.info("weChat pre pay result data: {}", wxRetMapData);
 
         // 封装参数返回App端
-        Map<String, String> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         result.put("appid", appProperties.getWx().getApp_id());
         result.put("partnerid", appProperties.getWx().getMch_id());
-        result.put("prepayid", retData.get("prepay_id").toString());
+        result.put("prepayid", wxRetMapData.get("prepay_id").toString());
         result.put("noncestr", nonce_str);
         result.put("timestamp", RandomUtil.getDateStr(13));
         result.put("package", "Sign=WXPay");
-        result.put("sign", AppUtil.createSign(result, appProperties.getWx().getApi_key()));
+        // 对返回给App端的数据进行签名
+        result.put("sign", PaymentUtils.sign(result, appProperties.getWx().getApi_key()));
         return result;
+    }
+
+    /**
+     * 微信支付通知接口 回调数据示例
+     *
+     * <xml>
+     * <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+     * <attach><![CDATA[支付测试]]></attach>
+     * <bank_type><![CDATA[CFT]]></bank_type>
+     * <fee_type><![CDATA[CNY]]></fee_type>
+     * <is_subscribe><![CDATA[Y]]></is_subscribe>
+     * <mch_id><![CDATA[10000100]]></mch_id>
+     * <nonce_str><![CDATA[5d2b6c2a8db53831f7eda20af46e531c]]></nonce_str>
+     * <openid><![CDATA[oUpF8uMEb4qRXf22hE3X68TekukE]]></openid>
+     * <out_trade_no><![CDATA[1409811653]]></out_trade_no>
+     * <result_code><![CDATA[SUCCESS]]></result_code>
+     * <return_code><![CDATA[SUCCESS]]></return_code>
+     * <sign><![CDATA[B552ED6B279343CB493C5DD0D78AB241]]></sign>
+     * <sub_mch_id><![CDATA[10000100]]></sub_mch_id>
+     * <time_end><![CDATA[20140903131540]]></time_end>
+     * <total_fee>1</total_fee><coupon_fee><![CDATA[10]]></coupon_fee>
+     * <trade_type><![CDATA[JSAPI]]></trade_type>
+     * <transaction_id><![CDATA[1004400740201409030005092168]]></transaction_id>
+     * </xml>
+     *
+     * <p>
+     * 收到微信通知后应返回微信已经收到通知，不然微信会回调多次 可能会出现保存多次订单流水的现象
+     * <p>
+     * 返回给微信通知示例如下
+     *
+     * <xml>
+     * <return_code><![CDATA[SUCCESS]]></return_code>
+     * <return_msg><![CDATA[OK]]></return_msg>
+     * </xml>
+     *
+     * @param request
+     * @param response
+     */
+    public void appNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String wxRetXml = PaymentUtils.getRequestData(request);
+        Map<String, String> wxRetMap = PaymentUtils.xmlToMap(wxRetXml);
+        Assert.notNull(wxRetMap, ExceptionMessage.XML_DATA_INCORRECTNESS.getMessage());
+
+        // 当返回的return_code为SUCCESS则回调成功
+        if ("SUCCESS".equalsIgnoreCase(wxRetMap.get("return_code"))) {
+            // 通知微信收到回调
+            String resXml = "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+            BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
+            out.write(resXml.getBytes());
+            out.flush();
+            out.close();
+
+            // TODO 保存订单流水 具体细节待实现
+            orderBillService.save(new OrderBill());
+
+            log.info("notify success");
+        } else {
+            log.error("notify failed");
+        }
     }
 
     /**
@@ -110,7 +186,7 @@ public class WxPayService {
      */
 
     /**
-     * 微信扫码支付传入金额为分
+     * 微信扫码支付
      *
      * @param totalFee
      * @param response
@@ -122,11 +198,11 @@ public class WxPayService {
                              HttpServletRequest request) {
         String nonce_str = RandomUtil.getStr(12);
         String outTradeNo = 1 + RandomUtil.randomNum(11);
-        String spbill_create_ip = AppUtil.getIpAddress(request);
-        if (!AppUtil.isIp(spbill_create_ip)) {
+        String spbill_create_ip = PaymentUtils.getIpAddress(request);
+        if (!PaymentUtils.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
         }
-        Map<String, String> params = new TreeMap<>();
+        Map<String, Object> params = new TreeMap<>();
         // 扫码支付需要参数
         params.put("appid", appProperties.getWx().getApp_id());
         params.put("mch_id", appProperties.getWx().getMch_id());
@@ -137,16 +213,16 @@ public class WxPayService {
         params.put("spbill_create_ip", spbill_create_ip);
         params.put("notify_url", appProperties.getWx().getRefund_url());
         params.put("trade_type", "NATIVE");
-        String sign = AppUtil.createSign(params, appProperties.getWx().getApi_key());
+        String sign = PaymentUtils.sign(params, appProperties.getWx().getApi_key());
         params.put("sign", sign);
-        String requestXml = AppUtil.mapToXml(params);
+        String requestXml = PaymentUtils.mapToXml(params);
         String responseXml = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), requestXml, null);
-        Map<String, String> respMap = AppUtil.xmlToMap(responseXml);
+        Map<String, String> respMap = PaymentUtils.xmlToMap(responseXml);
         //return_code为微信返回的状态码，SUCCESS表示成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
         if ("SUCCESS".equals(respMap.get("return_code")) && "SUCCESS".equals(respMap.get("result_code"))) {
             log.info("wx pre pay success response:{}", respMap);
             // 二维码中需要包含微信返回的信息
-            ImageCodeUtil.createQRCode(respMap.get("code_url"), response);
+            PaymentUtils.createQRCode(respMap.get("code_url"), response);
             // 保存订单信息
             return true;
         }
@@ -184,7 +260,7 @@ public class WxPayService {
         String out_refund_no = RandomUtil.getStr(12);
         Order order = orderService.findOne(orderId);
 
-        SortedMap<String, String> params = new TreeMap<>();
+        SortedMap<String, Object> params = new TreeMap<>();
         // 公众账号ID
         params.put("appid", appProperties.getWx().getApp_id());
         // 商户号
@@ -202,12 +278,12 @@ public class WxPayService {
         // 退款结果通知url
         params.put("notify_url", appProperties.getWx().getRefund_notify_url());
         // 签名
-        params.put("sign", AppUtil.createSign(params, appProperties.getWx().getApi_key()));
-        String data = AppUtil.mapToXml(params);
+        params.put("sign", PaymentUtils.sign(params, appProperties.getWx().getApi_key()));
+        String data = PaymentUtils.mapToXml(params);
 
         CloseableHttpClient httpClient = HttpUtil.sslHttpsClient(appProperties.getWx().getCertificate_path(), appProperties.getWx().getApi_key());
         String xmlResponse = HttpUtil.sendSslXmlPost(appProperties.getWx().getRefund_url(), data, null, httpClient);
-        Map<String, String> mapData = AppUtil.xmlToMap(xmlResponse);
+        Map<String, String> mapData = PaymentUtils.xmlToMap(xmlResponse);
         // return_code为微信返回的状态码，SUCCESS表示申请退款成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
         if ("SUCCESS".equalsIgnoreCase(mapData.get("return_code"))) {
             log.info("wx refund success response:{}", mapData);
@@ -229,12 +305,12 @@ public class WxPayService {
         User user = userService.findOne(order.getUserId());
         String nonce_str = RandomUtil.randomNum(12);
         String outTradeNo = 1 + RandomUtil.randomNum(11);
-        String spbill_create_ip = AppUtil.getIpAddress(request);
-        if (!AppUtil.isIp(spbill_create_ip)) {
+        String spbill_create_ip = PaymentUtils.getIpAddress(request);
+        if (!PaymentUtils.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
         }
         // 小程序支付需要参数
-        SortedMap<String, String> reqMap = new TreeMap<>();
+        SortedMap<String, Object> reqMap = new TreeMap<>();
         reqMap.put("appid", appProperties.getWx().getApp_id());
         reqMap.put("mch_id", appProperties.getWx().getMch_id());
         reqMap.put("nonce_str", nonce_str);
@@ -245,14 +321,14 @@ public class WxPayService {
         reqMap.put("notify_url", appProperties.getWx().getNotify_url());
         reqMap.put("trade_type", appProperties.getWx().getTrade_type());
         reqMap.put("openid", user.getOpenid());
-        String sign = AppUtil.createSign(reqMap, appProperties.getWx().getApi_key());
+        String sign = PaymentUtils.sign(reqMap, appProperties.getWx().getApi_key());
         reqMap.put("sign", sign);
-        String xml = AppUtil.mapToXml(reqMap);
+        String xml = PaymentUtils.mapToXml(reqMap);
         String result = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), xml, null);
-        Map<String, String> resData = AppUtil.xmlToMap(result);
+        Map<String, String> resData = PaymentUtils.xmlToMap(result);
         log.info("resData:{}", resData);
         if ("SUCCESS".equals(resData.get("return_code"))) {
-            Map<String, String> resultMap = new LinkedHashMap<>();
+            Map<String, Object> resultMap = new LinkedHashMap<>();
             //返回的预付单信息
             String prepay_id = resData.get("prepay_id");
             resultMap.put("appId", appProperties.getWx().getApp_id());
@@ -260,7 +336,7 @@ public class WxPayService {
             resultMap.put("package", "prepay_id=" + prepay_id);
             resultMap.put("signType", "MD5");
             resultMap.put("timeStamp", RandomUtil.getDateStr(14));
-            String paySign = AppUtil.createSign(resultMap, appProperties.getWx().getApi_key());
+            String paySign = PaymentUtils.sign(resultMap, appProperties.getWx().getApi_key());
             resultMap.put("paySign", paySign);
             log.info("return data:{}", resultMap);
             return resultMap;
@@ -269,4 +345,6 @@ public class WxPayService {
         }
 
     }
+
+
 }

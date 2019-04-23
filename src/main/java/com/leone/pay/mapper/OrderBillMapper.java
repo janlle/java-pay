@@ -1,6 +1,9 @@
 package com.leone.pay.mapper;
 
 
+import com.leone.pay.entity.OrderBill;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Param;
 import org.mapstruct.Mapper;
 
 /**
@@ -11,5 +14,8 @@ import org.mapstruct.Mapper;
  **/
 @Mapper
 public interface OrderBillMapper {
+
+    @Insert("insert into t_order_bill() values()")
+    int save(@Param("bill") OrderBill orderBill);
 
 }

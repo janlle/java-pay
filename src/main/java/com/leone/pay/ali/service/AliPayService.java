@@ -16,7 +16,7 @@ import com.leone.pay.common.property.AppProperties;
 import com.leone.pay.entity.Order;
 import com.leone.pay.service.OrderService;
 import com.leone.pay.service.UserService;
-import com.leone.pay.utils.ImageCodeUtil;
+import com.leone.pay.utils.PaymentUtils;
 import com.leone.pay.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -114,7 +114,7 @@ public class AliPayService {
         AlipayTradePrecreateResponse responseData = alipayClient.execute(request);
         log.info("response:{}", responseData.getBody());
         String qrCode = responseData.getQrCode();
-        ImageCodeUtil.createQRCode(qrCode, response);
+        PaymentUtils.createQRCode(qrCode, response);
     }
 
     /**
