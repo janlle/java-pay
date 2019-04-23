@@ -97,7 +97,7 @@ public class AppUtil {
             }
         }
         sb.append("key=").append(apiKey);
-        return MD5(sb.toString()).toUpperCase();
+        return Objects.requireNonNull(MD5(sb.toString())).toUpperCase();
     }
 
 
@@ -114,7 +114,7 @@ public class AppUtil {
             String k = entry.getKey();
             Object v = entry.getValue();
         }
-        return MD5(sb.toString()).toUpperCase();
+        return Objects.requireNonNull(MD5(sb.toString())).toUpperCase();
     }
 
     /**
@@ -214,8 +214,6 @@ public class AppUtil {
     public static void main(String[] args) throws Exception {
         System.out.println(MD5("hello"));
         String s = null;
-        System.out.println(Objects.nonNull(s));
-
     }
 
     /**
@@ -301,6 +299,5 @@ public class AppUtil {
         }
         return null;
     }
-
 
 }

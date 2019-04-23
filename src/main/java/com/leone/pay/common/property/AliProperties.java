@@ -2,6 +2,8 @@ package com.leone.pay.common.property;
 
 import lombok.Data;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * @author leone
  * @since 2018-06-03
@@ -9,22 +11,23 @@ import lombok.Data;
 @Data
 public class AliProperties {
 
-    //应用id
+    /*应用id*/
     public String app_id = "";
 
-    //应用私钥
+    /*应用私钥*/
+    //
     public String alipay_private_key = "";
 
-    //支付宝公钥
+    /*支付宝公钥*/
     public String alipay_public_key = "";
 
-    //字符编码
-    public String charset = "UTF-8";
+    /*字符编码*/
+    public String charset = StandardCharsets.UTF_8.displayName();
 
-    //签名方式
+    /*签名方式*/
     public String sign_type = "RSA2";
 
-    //数据格式
+    /*数据格式*/
     public String format = "JSON";
 
     /*支付回调url*/

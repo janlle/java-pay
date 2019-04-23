@@ -4,14 +4,14 @@ import com.leone.pay.common.enums.status.OrderStatus;
 import com.leone.pay.common.exception.ExceptionMessage;
 import com.leone.pay.common.exception.ValidateException;
 import com.leone.pay.common.property.AppProperties;
-import com.leone.pay.utils.AppUtil;
-import com.leone.pay.utils.HttpUtil;
-import com.leone.pay.utils.ImageCodeUtil;
-import com.leone.pay.utils.RandomUtil;
 import com.leone.pay.entity.Order;
 import com.leone.pay.entity.User;
 import com.leone.pay.service.OrderService;
 import com.leone.pay.service.UserService;
+import com.leone.pay.utils.AppUtil;
+import com.leone.pay.utils.HttpUtil;
+import com.leone.pay.utils.ImageCodeUtil;
+import com.leone.pay.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.springframework.stereotype.Service;
@@ -81,7 +81,7 @@ public class WxPayService {
         String sign = AppUtil.createSign(params, appProperties.getWx().getApi_key());
         params.put("sign", "sign");
         String xmlData = AppUtil.mapToXml(params);
-        String wxRetXmlData = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order(), xmlData, null);
+        String wxRetXmlData = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), xmlData, null);
         Map retData = AppUtil.xmlToMap(wxRetXmlData);
         log.info("微信返回信息:{}", retData);
 
@@ -121,7 +121,7 @@ public class WxPayService {
     public boolean qrCodePay(String totalFee, HttpServletResponse response,
                              HttpServletRequest request) {
         String nonce_str = RandomUtil.getStr(12);
-        String outTradeNo = 1 + RandomUtil.getNum(11);
+        String outTradeNo = 1 + RandomUtil.randomNum(11);
         String spbill_create_ip = AppUtil.getIpAddress(request);
         if (!AppUtil.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
@@ -140,7 +140,7 @@ public class WxPayService {
         String sign = AppUtil.createSign(params, appProperties.getWx().getApi_key());
         params.put("sign", sign);
         String requestXml = AppUtil.mapToXml(params);
-        String responseXml = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order(), requestXml, null);
+        String responseXml = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), requestXml, null);
         Map<String, String> respMap = AppUtil.xmlToMap(responseXml);
         //return_code为微信返回的状态码，SUCCESS表示成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
         if ("SUCCESS".equals(respMap.get("return_code")) && "SUCCESS".equals(respMap.get("result_code"))) {
@@ -227,8 +227,8 @@ public class WxPayService {
     public Map xcxPay(Long orderId, HttpServletRequest request) {
         Order order = orderService.findOne(orderId);
         User user = userService.findOne(order.getUserId());
-        String nonce_str = RandomUtil.getNum(12);
-        String outTradeNo = 1 + RandomUtil.getNum(11);
+        String nonce_str = RandomUtil.randomNum(12);
+        String outTradeNo = 1 + RandomUtil.randomNum(11);
         String spbill_create_ip = AppUtil.getIpAddress(request);
         if (!AppUtil.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
@@ -248,7 +248,7 @@ public class WxPayService {
         String sign = AppUtil.createSign(reqMap, appProperties.getWx().getApi_key());
         reqMap.put("sign", sign);
         String xml = AppUtil.mapToXml(reqMap);
-        String result = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order(), xml, null);
+        String result = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), xml, null);
         Map<String, String> resData = AppUtil.xmlToMap(result);
         log.info("resData:{}", resData);
         if ("SUCCESS".equals(resData.get("return_code"))) {

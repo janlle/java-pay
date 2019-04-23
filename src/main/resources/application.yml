@@ -23,8 +23,8 @@ app:
       api_key: xxxx
       cert_path: apiclient_cert.p12
       url:
-        payUrl: https://api.mch.wx.qq.com/pay/unifiedorder              # 统一下单url
-        refundUrl: https://api.mch.wx.qq.com/secapi/pay/refund          # 申请退款url
+        pay_url: https://api.mch.wx.qq.com/pay/unifiedorder              # 统一下单url
+        refund_url: https://api.mch.wx.qq.com/secapi/pay/refund          # 申请退款url
     ali:
       appid: xx
       private_key: xx

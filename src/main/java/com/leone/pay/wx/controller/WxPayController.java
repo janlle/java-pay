@@ -1,15 +1,16 @@
 package com.leone.pay.wx.controller;
 
+import com.leone.pay.common.Result;
 import com.leone.pay.wx.service.WxPayService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -25,13 +26,13 @@ import javax.servlet.http.HttpServletResponse;
 @RequestMapping("/wx")
 public class WxPayController {
 
-    @Autowired
+    @Resource
     private WxPayService weChatPayService;
 
     @GetMapping("/app/pay")
     @ApiOperation("微信App支付预下单")
-    public void appPay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
-        weChatPayService.appPay(request, orderId);
+    public Result appPay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
+        return Result.success(weChatPayService.appPay(request, orderId));
     }
 
     @ApiOperation("微信App支付回调")
@@ -59,8 +60,8 @@ public class WxPayController {
 
     @GetMapping("/xcx/pay")
     @ApiOperation("小程序扫码支付预下单")
-    public void xcxPay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
-        weChatPayService.xcxPay(orderId, request);
+    public Result xcxPay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
+        return Result.success(weChatPayService.xcxPay(orderId, request));
     }
 
     @ApiOperation("小程序码支付回调")

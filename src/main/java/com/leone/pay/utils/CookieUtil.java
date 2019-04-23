@@ -7,8 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 操作cookie的工具类
- */
+ * <p> 操作cookie的工具类
+ *
+ * @author leone
+ * @since 2019-04-23
+ **/
 public class CookieUtil {
 
     public static void set(HttpServletResponse response, String name, String value, int maxAge) {
@@ -28,7 +31,7 @@ public class CookieUtil {
     }
 
     private static Map<String, Cookie> read(HttpServletRequest request) {
-        Cookie cookies[] = request.getCookies();
+        Cookie[] cookies = request.getCookies();
         Map<String, Cookie> map = new HashMap<>();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
