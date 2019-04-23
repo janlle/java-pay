@@ -1,7 +1,5 @@
 package com.leone.pay.entity;
 
-import lombok.Data;
-
 import java.io.Serializable;
 import java.util.Date;
 
@@ -9,9 +7,9 @@ import java.util.Date;
  * @author leone
  * @since 2018-10-23
  **/
-@Data
 public class User implements Serializable {
 
+    private static final long serialVersionUID = -2694291552469030037L;
     private Long userId;
 
     private String account;

@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * <p> 
+ * <p>
  *
  * @author leone
  * @since 2018-08-23
@@ -15,36 +15,39 @@ import java.util.Date;
 public class Goods {
 
     @ApiModelProperty("商品id")
-    private String productId;
+    private Long goodsId;
 
     @ApiModelProperty("分类id")
-    private Integer categoryId;
+    private Long categoryId;
 
     @ApiModelProperty("商品名称")
-    private String name;
+    private String goodsName;
 
-    @ApiModelProperty("商品价格单位分")
-    private Long price;
+    @ApiModelProperty("商品价格 单位分")
+    private Long goodsPrice;
 
     @ApiModelProperty("商品条码")
-    private String barcode;
+    private String goodsBarcode;
 
-    @ApiModelProperty("商品数量")
-    private Integer count;
+    @ApiModelProperty("商品库存")
+    private Integer goodsInventory;
 
     @ApiModelProperty("商品描述")
     private String description;
 
     @ApiModelProperty("图片url")
-    private String imageUrl;
-
-    @ApiModelProperty("小图")
-    private String icon;
+    private String goodsPicture;
 
     @ApiModelProperty("状态")
     private Integer status;
 
+    @ApiModelProperty("创建时间")
+    private Date createTime;
+
     @ApiModelProperty("修改时间")
     private Date updateTime;
+
+    @ApiModelProperty("是否删除")
+    private boolean deleted;
 
 }

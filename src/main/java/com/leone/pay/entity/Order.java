@@ -2,6 +2,7 @@ package com.leone.pay.entity;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -11,7 +12,9 @@ import java.util.Date;
  * @since 2018-10-27
  **/
 @Data
-public class Order {
+public class Order implements Serializable {
+
+    private static final long serialVersionUID = -4683295717374444772L;
 
     private Long orderId;
 
@@ -38,5 +41,7 @@ public class Order {
     private Date finishTime;
 
     private Date payTime;
+
+    private boolean deleted;
 
 }

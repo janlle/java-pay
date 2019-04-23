@@ -1,8 +1,17 @@
 package com.leone.pay.mapper;
 
 import com.leone.pay.entity.Goods;
+import org.mapstruct.Mapper;
 
-public interface ProductMapper {
+/**
+ * <p> 
+ *
+ * @author leone
+ * @since 2019-04-23
+ **/
+@Mapper
+public interface GoodsMapper {
+    
     int deleteByPrimaryKey(Long id);
 
     int insert(Goods record);

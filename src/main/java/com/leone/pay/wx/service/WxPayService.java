@@ -1,6 +1,6 @@
 package com.leone.pay.wx.service;
 
-import com.leone.pay.common.enums.OrderStatusEnum;
+import com.leone.pay.common.enums.status.OrderStatus;
 import com.leone.pay.common.exception.ExceptionMessage;
 import com.leone.pay.common.exception.ValidateException;
 import com.leone.pay.common.property.AppProperties;
@@ -48,7 +48,7 @@ public class WxPayService {
      */
     public Map<String, String> appPay(HttpServletRequest request, Long orderId) {
         Order order = orderService.findOne(orderId);
-        if (order.getStatus() != OrderStatusEnum.CREATE.getStatus()) {
+        if (order.getStatus() != OrderStatus.CREATE.getStatus()) {
             log.error("order status error orderId:{}", orderId);
             return null;
         }
