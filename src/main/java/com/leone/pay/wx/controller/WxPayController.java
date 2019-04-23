@@ -24,7 +24,7 @@ import java.io.IOException;
 @Slf4j
 @RestController
 @Api(tags = "微信支付接口")
-@RequestMapping("/wx/pay")
+@RequestMapping("/api/wx/pay")
 public class WxPayController {
 
     @Resource
@@ -36,40 +36,28 @@ public class WxPayController {
         return Result.success(wxPayService.appPay(request, orderId));
     }
 
-    @ApiOperation("微信App支付回调")
-    @RequestMapping(value = "/app/notify", method = {RequestMethod.GET, RequestMethod.POST})
-    public void appNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        wxPayService.appNotify(request, response);
-    }
-
     @ApiOperation("微信App支付退款")
     @GetMapping("/app/refund")
-    public void appRefund(Long orderId) {
-//        wxPayService.wxRefund(orderId);
+    public Result appRefund(Long orderId) throws Exception {
+        return wxPayService.wxRefund(orderId);
     }
 
-    @GetMapping("/qr/code/pay")
+    @GetMapping("/qrcode")
     @ApiOperation("微信扫码支付预下单")
-    public void qrCodePay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
-        wxPayService.qrCodePay("1", response, request);
+    public Result qrCodePay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
+        return wxPayService.qrCodePay(orderId, response, request);
     }
 
-    @ApiOperation("微信扫码支付回调")
-    @RequestMapping(value = "/qr/code/notify", method = {RequestMethod.GET, RequestMethod.POST})
-    public void qrCodeNotify(Long orderId) {
-    }
-
-
-    @GetMapping("/xcx/pay")
-    @ApiOperation("小程序扫码支付预下单")
+    @GetMapping("/xcx")
+    @ApiOperation("小程序扫支付预下单")
     public Result xcxPay(Long orderId, HttpServletRequest request, HttpServletResponse response) {
-        return Result.success(wxPayService.xcxPay(orderId, request));
+        return wxPayService.xcxPay(orderId, request);
     }
 
-    @ApiOperation("小程序码支付回调")
-    @RequestMapping(value = "/xcx/notify", method = {RequestMethod.GET, RequestMethod.POST})
-    public void xcxNotify(Long orderId, HttpServletRequest request) {
-        wxPayService.xcxPay(orderId, request);
+    @ApiOperation("微信支付通知")
+    @RequestMapping(value = "/notify", method = {RequestMethod.GET, RequestMethod.POST})
+    public void appNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        wxPayService.notify(request, response);
     }
 
 }

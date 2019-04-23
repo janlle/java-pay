@@ -36,7 +36,7 @@ public class SwaggerConfig {
                 .apiInfo(apiInfo())
                 .globalOperationParameters(Collections.singletonList(parameter))
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.andy.pay.web"))
+                .apis(RequestHandlerSelectors.basePackage("com.leone.pay.web"))
                 .paths(PathSelectors.any())
                 .build();
     }
@@ -47,7 +47,7 @@ public class SwaggerConfig {
                 .groupName("支付宝API接口文档")
                 .apiInfo(apiInfo())
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.andy.pay.ali"))
+                .apis(RequestHandlerSelectors.basePackage("com.leone.pay.ali"))
                 .paths(PathSelectors.any())
                 .build();
     }
@@ -88,10 +88,10 @@ public class SwaggerConfig {
         return new ApiInfoBuilder()
                 .title("支付系统")
                 .description("微信、支付宝、银联支付服务")
-                .termsOfServiceUrl("https://lyon.com")
+                .termsOfServiceUrl("https://leone.com")
                 .version("v1.0.1")
                 .license("Apache2.0")
-                .contact(new Contact("lyon", "https://lyon.com", "lyon@gmail.com"))
+                .contact(new Contact("lyon", "https://leone.com", "exklin@gmail.com"))
                 .licenseUrl("http://www.apache.org")
                 .build();
     }

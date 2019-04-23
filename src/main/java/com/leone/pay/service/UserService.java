@@ -20,9 +20,16 @@ public class UserService {
     @Resource
     private UserMapper userMapper;
 
+    /**
+     *
+     * @param userId
+     * @return
+     */
     public User findOne(Long userId) {
         User user = userMapper.findByUserId(userId);
         Assert.notNull(user, ExceptionMessage.USER_NOT_EXIST.getMessage());
         return user;
     }
+
+
 }

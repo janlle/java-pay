@@ -11,7 +11,10 @@ import com.alipay.api.response.AlipayTradeAppPayResponse;
 import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.alipay.api.response.AlipayTradeRefundResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.leone.pay.common.Result;
+import com.leone.pay.common.enums.status.OrderStatus;
 import com.leone.pay.common.exception.ExceptionMessage;
+import com.leone.pay.common.exception.ValidateException;
 import com.leone.pay.common.property.AppProperties;
 import com.leone.pay.entity.Order;
 import com.leone.pay.service.OrderService;
@@ -20,6 +23,7 @@ import com.leone.pay.utils.PaymentUtils;
 import com.leone.pay.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -50,12 +54,13 @@ public class AliPayService {
     @Resource
     private ObjectMapper objectMapper;
 
+    // 阿里 sdk 封装
     private AlipayClient alipayClient;
 
     @PostConstruct
     public void initMethod() {
         alipayClient = new DefaultAlipayClient(
-                appProperties.getAli().getRefund_url(),
+                appProperties.getAli().getServerUrl(),
                 appProperties.getAli().getApp_id(),
                 appProperties.getAli().getAlipay_private_key(),
                 appProperties.getAli().getFormat(),
@@ -69,15 +74,23 @@ public class AliPayService {
      *
      * @param orderId
      */
-    public boolean deposit(Long orderId) {
-        AlipayFundTransToaccountTransferModel transferModel = new AlipayFundTransToaccountTransferModel();
+    public Result deposit(Long orderId) {
+        // 校验订单信息
         Order order = orderService.findOne(orderId);
-        transferModel.setOutBizNo(1 + RandomUtil.randomNum(11));
+        if (order.getStatus() != OrderStatus.CREATE.getStatus()) {
+            log.error(ExceptionMessage.ORDER_STATUS_INCORRECTNESS + " orderId: {}", orderId);
+            throw new ValidateException(ExceptionMessage.ORDER_STATUS_INCORRECTNESS);
+        }
+
+        AlipayFundTransToaccountTransferModel transferModel = new AlipayFundTransToaccountTransferModel();
+
+
+        transferModel.setOutBizNo(1 + RandomUtil.randomNum(15));
         transferModel.setAmount(order.getTotalFee().toString());
-        transferModel.setPayeeAccount("支付宝账号真实账号");
-        transferModel.setPayeeRealName("支付宝账号真实姓名");
-        transferModel.setPayerShowName("付款方显示姓名");
-        transferModel.setRemark("备注");
+        transferModel.setPayeeAccount("real account");
+        transferModel.setPayeeRealName("real name");
+        transferModel.setPayerShowName("from name");
+        transferModel.setRemark("remark");
         transferModel.setPayeeType("ALIPAY_LOGONID");
         try {
             AlipayFundTransToaccountTransferRequest request = new AlipayFundTransToaccountTransferRequest();
@@ -85,9 +98,9 @@ public class AliPayService {
             AlipayFundTransToaccountTransferResponse response = alipayClient.execute(request);
         } catch (AlipayApiException e) {
             log.info("ali deposit error message:{}", e.getMessage());
-            return false;
+            return Result.success(ExceptionMessage.ALI_DEPOSIT_SUCCESS);
         }
-        return true;
+        return Result.error(ExceptionMessage.ALI_DEPOSIT_FAILED);
     }
 
 
@@ -98,8 +111,14 @@ public class AliPayService {
      * @param response
      * @return
      */
-    public void qrPay(Long orderId, HttpServletResponse response) throws Exception {
+    public Result aliQrCodePay(Long orderId, HttpServletResponse response) throws Exception {
+        // 校验订单信息
         Order order = orderService.findOne(orderId);
+        if (order.getStatus() != OrderStatus.CREATE.getStatus()) {
+            log.error(ExceptionMessage.ORDER_STATUS_INCORRECTNESS + " orderId: {}", orderId);
+            throw new ValidateException(ExceptionMessage.ORDER_STATUS_INCORRECTNESS);
+        }
+
         AlipayTradePrecreateRequest request = new AlipayTradePrecreateRequest();
         Map<String, String> params = new TreeMap<>();
         params.put("out_trade_no", order.getOutTradeNo());
@@ -114,7 +133,11 @@ public class AliPayService {
         AlipayTradePrecreateResponse responseData = alipayClient.execute(request);
         log.info("response:{}", responseData.getBody());
         String qrCode = responseData.getQrCode();
-        PaymentUtils.createQRCode(qrCode, response);
+        if (!ObjectUtils.isEmpty(qrCode)) {
+            PaymentUtils.createQRCode(qrCode, response);
+            return Result.success(ExceptionMessage.SUCCESS);
+        }
+        return Result.error(ExceptionMessage.ALI_PAY_CREATE_QR_CODE_SUCCESS);
     }
 
     /**
@@ -124,31 +147,36 @@ public class AliPayService {
      * @param servletRequest
      * @return
      */
-    public Boolean aliRefund(Long orderId, HttpServletRequest servletRequest) throws Exception {
+    public Result aliRefund(Long orderId, HttpServletRequest servletRequest) throws Exception {
+        // 校验订单信息
         Order order = orderService.findOne(orderId);
+        if (order.getStatus() < OrderStatus.PAY.getStatus()) {
+            log.error(ExceptionMessage.ORDER_STATUS_INCORRECTNESS + " orderId: {}", orderId);
+            throw new ValidateException(ExceptionMessage.ORDER_STATUS_INCORRECTNESS);
+        }
         // 创建退款请求builder，设置请求参数
         AlipayTradeRefundRequest request = new AlipayTradeRefundRequest();
         Map<String, String> params = new TreeMap<>();
-        //必须 商户订单号
+        // 必须 商户订单号
         params.put("out_trade_no", order.getOutTradeNo());
-        //必须 支付宝交易号
+        // 必须 支付宝交易号
         params.put("trade_no", order.getTotalFee().toString());
-        //必须 退款金额
+        // 必须 退款金额
         params.put("refund_amount", order.getTotalFee().toString());
-        //可选 代表 退款的原因说明
+        // 可选 代表 退款的原因说明
         params.put("refund_reason", "退款的原因说明");
-        //可选 标识一次退款请求，同一笔交易多次退款需要保证唯一（就是out_request_no在2次退款一笔交易时，要不一样），如需部分退款，则此参数必传
+        // 可选 标识一次退款请求，同一笔交易多次退款需要保证唯一（就是out_request_no在2次退款一笔交易时，要不一样），如需部分退款，则此参数必传
         params.put("out_request_no", 1 + RandomUtil.randomNum(11));
-        //可选 代表 商户的门店编号
+        // 可选 代表 商户的门店编号
         params.put("store_id", "90m");
         request.setBizContent(objectMapper.writeValueAsString(params));
         AlipayTradeRefundResponse responseData = alipayClient.execute(request);
         if (responseData.isSuccess()) {
             log.info("ali refund success tradeNo:{}", order.getOutTradeNo());
-            return true;
+            return Result.success(ExceptionMessage.SUCCESS);
         }
         log.info("ali refund failed tradeNo:{}", order.getOutTradeNo());
-        return false;
+        return Result.error(ExceptionMessage.ALI_PAY_REFUND_FAILED);
     }
 
 

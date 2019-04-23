@@ -37,7 +37,7 @@ public class RandomUtil {
      * @param length
      * @return
      */
-    public static String getStr(Integer length) {
+    public static String randomStr(Integer length) {
         if (length <= 0 || length > 32) {
             length = 32;
         }

@@ -339,25 +339,6 @@ public class PaymentUtils {
         return null;
     }
 
-    /**
-     * xml 转换 bean
-     *
-     * @param clazz
-     * @param xml
-     * @param <T>
-     * @return
-     */
-    public static <T> T xmlToBean(Class<T> clazz, String xml) {
-        try {
-            JAXBContext context = JAXBContext.newInstance(clazz);
-            Unmarshaller unmarshaller = context.createUnmarshaller();
-            return (T) unmarshaller.unmarshal(new StringReader(xml));
-        } catch (JAXBException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
 
     /**
      * 生成二维码并响应到浏览器

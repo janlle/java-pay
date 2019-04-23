@@ -1,5 +1,6 @@
 package com.leone.pay.wx.service;
 
+import com.leone.pay.common.Result;
 import com.leone.pay.common.enums.status.OrderStatus;
 import com.leone.pay.common.exception.ExceptionMessage;
 import com.leone.pay.common.exception.ValidateException;
@@ -65,7 +66,7 @@ public class WxPayService {
             spbill_create_ip = "127.0.0.1";
         }
 
-        String nonce_str = 1 + RandomUtil.getStr(15);
+        String nonce_str = 1 + RandomUtil.randomStr(15);
 
         // 微信app支付十个必须要传入的参数
         Map<String, Object> params = new HashMap<>();
@@ -150,7 +151,7 @@ public class WxPayService {
      * @param request
      * @param response
      */
-    public void appNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void notify(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String wxRetXml = PaymentUtils.getRequestData(request);
         Map<String, String> wxRetMap = PaymentUtils.xmlToMap(wxRetXml);
         Assert.notNull(wxRetMap, ExceptionMessage.XML_DATA_INCORRECTNESS.getMessage());
@@ -188,16 +189,22 @@ public class WxPayService {
     /**
      * 微信扫码支付
      *
-     * @param totalFee
+     * @param orderId
      * @param response
      * @param request
      * @return
      * @throws Exception
      */
-    public boolean qrCodePay(String totalFee, HttpServletResponse response,
-                             HttpServletRequest request) {
-        String nonce_str = RandomUtil.getStr(12);
-        String outTradeNo = 1 + RandomUtil.randomNum(11);
+    public Result qrCodePay(Long orderId, HttpServletResponse response, HttpServletRequest request) {
+        // 校验订单信息
+        Order order = orderService.findOne(orderId);
+        if (order.getStatus() != OrderStatus.CREATE.getStatus()) {
+            log.error(ExceptionMessage.ORDER_STATUS_INCORRECTNESS + " orderId: {}", orderId);
+            throw new ValidateException(ExceptionMessage.ORDER_STATUS_INCORRECTNESS);
+        }
+
+        String nonce_str = RandomUtil.randomStr(12);
+        String outTradeNo = 1 + RandomUtil.randomNum(15);
         String spbill_create_ip = PaymentUtils.getIpAddress(request);
         if (!PaymentUtils.isIp(spbill_create_ip)) {
             spbill_create_ip = "127.0.0.1";
@@ -209,44 +216,31 @@ public class WxPayService {
         params.put("nonce_str", nonce_str);
         params.put("body", "微信扫码支付");
         params.put("out_trade_no", outTradeNo);
-        params.put("total_fee", totalFee);
+        params.put("total_fee", order.getTotalFee());
         params.put("spbill_create_ip", spbill_create_ip);
         params.put("notify_url", appProperties.getWx().getRefund_url());
+        // 交易类型:JS_API=公众号支付、NATIVE=扫码支付、APP=app支付
         params.put("trade_type", "NATIVE");
         String sign = PaymentUtils.sign(params, appProperties.getWx().getApi_key());
         params.put("sign", sign);
-        String requestXml = PaymentUtils.mapToXml(params);
-        String responseXml = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), requestXml, null);
-        Map<String, String> respMap = PaymentUtils.xmlToMap(responseXml);
-        //return_code为微信返回的状态码，SUCCESS表示成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
-        if ("SUCCESS".equals(respMap.get("return_code")) && "SUCCESS".equals(respMap.get("result_code"))) {
-            log.info("wx pre pay success response:{}", respMap);
+
+        String responseXml = HttpUtil.sendPostXml(appProperties.getWx().getCreate_order_url(), PaymentUtils.mapToXml(params), null);
+        Map<String, String> responseMap = PaymentUtils.xmlToMap(responseXml);
+
+        Assert.notNull(responseMap, ExceptionMessage.XML_DATA_INCORRECTNESS.getMessage());
+        // return_code为微信返回的状态码，SUCCESS表示成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
+        if ("SUCCESS".equalsIgnoreCase(responseMap.get("return_code")) && "SUCCESS".equals(responseMap.get("result_code"))) {
+            log.info("wx pre pay success response: {}", responseMap);
             // 二维码中需要包含微信返回的信息
-            PaymentUtils.createQRCode(respMap.get("code_url"), response);
-            // 保存订单信息
-            return true;
+            PaymentUtils.createQRCode(responseMap.get("code_url"), response);
+            // TODO 保存订单信息
+
+            return Result.success(ExceptionMessage.SUCCESS.getMessage());
         }
-        log.error("wx pre pay error response:{}", respMap);
-        return false;
+        log.error("wx pre pay error response: {}", responseMap);
+        return Result.error(ExceptionMessage.WX_NATIVE_PRE_PAY_FAILED);
     }
 
-    /**
-     * 微信支付回调
-     *
-     * @param request
-     * @param response
-     * @throws IOException
-     */
-    public void notifyOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String resXml = "<xml><return_code><![CDATA[SUCCESS]]>" +
-                "</return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
-        BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream());
-        out.write(resXml.getBytes());
-        out.flush();
-        out.close();
-        log.info("wx notify success");
-        // 保存流水信息
-    }
 
     /**
      * 微信退款
@@ -255,10 +249,17 @@ public class WxPayService {
      * @return
      * @throws Exception
      */
-    public boolean wxRefund(Long orderId) throws Exception {
-        String nonceStr = RandomUtil.getStr(12);
-        String out_refund_no = RandomUtil.getStr(12);
+    public Result wxRefund(Long orderId) throws Exception {
+
+        // 校验订单信息
         Order order = orderService.findOne(orderId);
+        if (order.getStatus() != OrderStatus.CREATE.getStatus()) {
+            log.error(ExceptionMessage.ORDER_STATUS_INCORRECTNESS + " orderId: {}", orderId);
+            throw new ValidateException(ExceptionMessage.ORDER_STATUS_INCORRECTNESS);
+        }
+
+        String nonceStr = RandomUtil.randomStr(15);
+        String out_refund_no = RandomUtil.randomStr(15);
 
         SortedMap<String, Object> params = new TreeMap<>();
         // 公众账号ID
@@ -281,17 +282,22 @@ public class WxPayService {
         params.put("sign", PaymentUtils.sign(params, appProperties.getWx().getApi_key()));
         String data = PaymentUtils.mapToXml(params);
 
+        // 微信退款需要证书
         CloseableHttpClient httpClient = HttpUtil.sslHttpsClient(appProperties.getWx().getCertificate_path(), appProperties.getWx().getApi_key());
-        String xmlResponse = HttpUtil.sendSslXmlPost(appProperties.getWx().getRefund_url(), data, null, httpClient);
-        Map<String, String> mapData = PaymentUtils.xmlToMap(xmlResponse);
+
+        // 向微信发起退款
+        String responseXml = HttpUtil.sendSslXmlPost(appProperties.getWx().getRefund_url(), data, null, httpClient);
+
+        Map<String, String> responseMap = PaymentUtils.xmlToMap(responseXml);
+        Assert.notNull(responseMap, ExceptionMessage.XML_DATA_INCORRECTNESS.getMessage());
         // return_code为微信返回的状态码，SUCCESS表示申请退款成功，return_msg 如非空，为错误原因 签名失败 参数格式校验错误
-        if ("SUCCESS".equalsIgnoreCase(mapData.get("return_code"))) {
-            log.info("wx refund success response:{}", mapData);
+        if ("SUCCESS".equalsIgnoreCase(responseMap.get("return_code"))) {
+            log.info("wx refund success response:{}", responseMap);
             // 修改订单状态为退款保存退款订单等操作
-            return true;
+            return Result.error(ExceptionMessage.SUCCESS);
         }
-        log.error("wx refund error response:{}", mapData);
-        return false;
+        log.error("wx refund error response:{}", responseMap);
+        return Result.error(ExceptionMessage.WX_REFUND_FAILED);
     }
 
     /**
@@ -300,7 +306,7 @@ public class WxPayService {
      * @param orderId
      * @param request
      */
-    public Map xcxPay(Long orderId, HttpServletRequest request) {
+    public Result xcxPay(Long orderId, HttpServletRequest request) {
         Order order = orderService.findOne(orderId);
         User user = userService.findOne(order.getUserId());
         String nonce_str = RandomUtil.randomNum(12);
@@ -339,12 +345,9 @@ public class WxPayService {
             String paySign = PaymentUtils.sign(resultMap, appProperties.getWx().getApi_key());
             resultMap.put("paySign", paySign);
             log.info("return data:{}", resultMap);
-            return resultMap;
-        } else {
-            throw new ValidateException(ExceptionMessage.WEI_XIN_PAY_FAIL);
+            return Result.success(resultMap);
         }
-
+        return Result.error(ExceptionMessage.WEI_XIN_PAY_FAIL);
     }
-
 
 }

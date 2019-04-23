@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @Api(tags = "支付宝支付")
-@RequestMapping(value = "/ali")
+@RequestMapping(value = "/api/pay/ali")
 public class AliPayController {
+
+
 
 
 }

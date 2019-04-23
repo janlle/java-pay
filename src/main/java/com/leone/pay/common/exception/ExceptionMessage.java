@@ -43,6 +43,12 @@ public enum ExceptionMessage {
     THE_START_TIME_CANNOT_BE_LESS_THAN_THE_CURRENT_TIME(40042, "开始时间不能小于当前时间"),
     CURRENT_ORDER_IS_NOT_SHIPPED(40043, "当前订单未发货"),
     XML_DATA_INCORRECTNESS(40044, "xml数据格式不正确"),
+    WX_NATIVE_PRE_PAY_FAILED(40045, "微信扫码支付预下单失败"),
+    WX_REFUND_FAILED(40046, "微信退款失败"),
+    ALI_DEPOSIT_FAILED(40060, "支付宝提现失败"),
+    ALI_DEPOSIT_SUCCESS(40061, "支付宝提现成功"),
+    ALI_PAY_CREATE_QR_CODE_SUCCESS(40062, "支付宝生成二维码成功"),
+    ALI_PAY_REFUND_FAILED(40063, "支付宝退款失败"),
     ORDER_STATUS_INCORRECTNESS(40090, "订单状态不正确")
 
     ;
