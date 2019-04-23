@@ -17,18 +17,23 @@ import com.leone.pay.common.exception.ExceptionMessage;
 import com.leone.pay.common.exception.ValidateException;
 import com.leone.pay.common.property.AppProperties;
 import com.leone.pay.entity.Order;
+import com.leone.pay.entity.OrderBill;
+import com.leone.pay.service.OrderBillService;
 import com.leone.pay.service.OrderService;
 import com.leone.pay.service.UserService;
 import com.leone.pay.utils.PaymentUtils;
 import com.leone.pay.utils.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -54,13 +59,16 @@ public class AliPayService {
     @Resource
     private ObjectMapper objectMapper;
 
+    @Resource
+    private OrderBillService orderBillService;
+
     // 阿里 sdk 封装
     private AlipayClient alipayClient;
 
     @PostConstruct
     public void initMethod() {
         alipayClient = new DefaultAlipayClient(
-                appProperties.getAli().getServerUrl(),
+                appProperties.getAli().getServer_url(),
                 appProperties.getAli().getApp_id(),
                 appProperties.getAli().getAlipay_private_key(),
                 appProperties.getAli().getFormat(),
@@ -83,7 +91,6 @@ public class AliPayService {
         }
 
         AlipayFundTransToaccountTransferModel transferModel = new AlipayFundTransToaccountTransferModel();
-
 
         transferModel.setOutBizNo(1 + RandomUtil.randomNum(15));
         transferModel.setAmount(order.getTotalFee().toString());
@@ -187,21 +194,21 @@ public class AliPayService {
      * @param servletRequest
      * @return
      */
-    public String pcPay(Long orderId, HttpServletRequest servletRequest) throws Exception {
+    public String aliPcPay(Long orderId, HttpServletRequest servletRequest) throws Exception {
         Order order = orderService.findOne(orderId);
         AlipayTradePagePayRequest payRequest = new AlipayTradePagePayRequest();
-        //前台通知
+        // 前台通知
         payRequest.setReturnUrl(appProperties.getAli().getReturn_url());
-        //后台回调
+        // 后台回调
         payRequest.setNotifyUrl(appProperties.getAli().getNotify_url());
         Map<String, String> params = new TreeMap<>();
         params.put("out_trade_no", order.getOutTradeNo());
-        //订单金额:元
+        // 订单金额:元
         params.put("total_amount", order.getTotalFee().toString());
         params.put("subject", "订单标题");
-        //实际收款账号，一般填写商户PID即可
+        // 实际收款账号，一般填写商户PID即可
         params.put("seller_id", appProperties.getAli().getMch_id());
-        //电脑网站支付
+        // 电脑网站支付
         params.put("product_code", "FAST_INSTANT_TRADE_PAY");
         params.put("body", "两个橘子");
         payRequest.setBizContent(objectMapper.writeValueAsString(params));
@@ -247,5 +254,25 @@ public class AliPayService {
         return null;
     }
 
+    /**
+     * 支付回调通知
+     *
+     * @param request
+     * @param response
+     */
+    public void aliNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String requestXml = PaymentUtils.getRequestData(request);
+        Map requestMap = PaymentUtils.xmlToMap(requestXml);
+        Assert.notNull(requestMap, ExceptionMessage.XML_DATA_INCORRECTNESS.getMessage());
 
+        // 当返回的return_code为SUCCESS则回调成功
+        if (requestMap.get("code").equals(10000)) {
+
+            // TODO 保存订单流水 具体细节待实现
+            orderBillService.save(new OrderBill());
+            log.info("notify success");
+        } else {
+            log.error("notify failed");
+        }
+    }
 }
