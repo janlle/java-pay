@@ -19,9 +19,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -265,7 +262,7 @@ public class PaymentUtils {
         return sb.toString();
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Map<String, Object> map = new HashMap<>();
         map.put("e", "value1");
         map.put("f", "value2");
