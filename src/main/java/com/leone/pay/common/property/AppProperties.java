@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 2018-07-31
  **/
 @Configuration
-@ConfigurationProperties(prefix = "app")
+@ConfigurationProperties(prefix = "app.pay")
 public class AppProperties {
 
     private AliProperties ali = new AliProperties();
