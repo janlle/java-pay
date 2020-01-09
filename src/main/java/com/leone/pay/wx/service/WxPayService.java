@@ -320,7 +320,7 @@ public class WxPayService {
         reqMap.put("appid", appProperties.getWx().getApp_id());
         reqMap.put("mch_id", appProperties.getWx().getMch_id());
         reqMap.put("nonce_str", nonce_str);
-        reqMap.put("body", "小程序支付");
+        reqMap.put("body", "Mimi Programing Pay");
         reqMap.put("out_trade_no", outTradeNo);
         reqMap.put("total_fee", order.getTotalFee().toString());
         reqMap.put("spbill_create_ip", spbill_create_ip);
